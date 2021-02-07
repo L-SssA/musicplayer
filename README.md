@@ -2,7 +2,7 @@
 
 
 ```
-需要某著名的音乐api支持
+需要[音乐api](https://github.com/Binaryify/NeteaseCloudMusicApi)支持
 ```
 
 ## Project setup
