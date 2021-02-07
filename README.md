@@ -1,9 +1,7 @@
 # 只有一页的播放器
 
 
-```
-需要[音乐api](https://github.com/Binaryify/NeteaseCloudMusicApi)支持
-```
+> 需要[著名网易云音乐API](https://github.com/Binaryify/NeteaseCloudMusicApi)的支持
 
 ## Project setup
 ```
