@@ -18,21 +18,18 @@
       @timeupdate="lyricSync"
       @ended="currentLineIndex = 0"
     />
-    <p
-      v-for="(item, index) in lyric"
-      :key="index"
-      :class="{ active: index === currentLineIndex }"
-      class="lyric-line"
-    >
-      {{ item.text }}
-    </p>
   </div>
+  <lyric-box :lyric="lyric" :lineIndex="currentLineIndex"></lyric-box>
 </template>
 
 <script>
 import axios from "axios";
+import LyricBox from "~c/LyricBox";
+
 export default {
-  components: {},
+  components: {
+    LyricBox,
+  },
   data() {
     return {
       searchKey: "",
@@ -55,7 +52,7 @@ export default {
         },
       ],
       currentSong: null,
-      lyric: "",
+      lyric: [],
       currentLineIndex: 0,
     };
   },
@@ -69,8 +66,7 @@ export default {
         });
     },
     async play(id) {
-      this.currentSong = await (await axios.get(`/song/url?id=${id}`)).data
-        .data[0];
+      this.currentSong = (await axios.get(`/song/url?id=${id}`)).data.data[0];
 
       this.lyric = (
         await axios.get(`http://localhost:3000/lyric?id=${id}`)
@@ -102,12 +98,4 @@ export default {
 </script>
 
 <style scoped>
-.lyric-line {
-  text-align: center;
-  transition: font-weight 0.3s ease-in-out, font-size 0.3s ease-in-out;
-}
-.active {
-  font-weight: 900;
-  font-size: 1.6rem;
-}
 </style>
