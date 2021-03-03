@@ -5,6 +5,7 @@
       :columns="columns"
       :data-source="songList"
       :rowKey="(record) => record.id"
+      @change="changeHandler"
     >
       <template #control="{ record }">
         <a-button @click="play(record.id)">播放</a-button>
@@ -25,66 +26,78 @@
 <script>
 import axios from "axios";
 import LyricBox from "~c/LyricBox";
+import musciApi from "@/utils/http/api_music.js";
 
 export default {
   components: {
-    LyricBox,
+    LyricBox
   },
-  data() {
+  data () {
     return {
       searchKey: "",
+      limit: 30,
+      offset: 0,
       songList: [],
+      songCount: 0,
       columns: [
         {
           title: "歌名",
           dataIndex: "name",
-          key: "name",
+          key: "name"
         },
         {
           title: "歌手",
           dataIndex: "artists[0].name",
-          key: "artists",
+          key: "artists"
         },
         {
           title: "操作",
           key: "control",
-          slots: { customRender: "control" },
-        },
+          slots: { customRender: "control" }
+        }
       ],
       currentSong: null,
       lyric: [],
-      currentLineIndex: 0,
+      currentLineIndex: 0
     };
   },
   methods: {
-    search() {
-      axios
-        .get(`http://localhost:3000/search?keywords=${this.searchKey}`)
-        .then((res) => {
-          // console.log(res);
-          this.songList = res.data.result.songs;
-        });
-    },
-    async play(id) {
-      this.currentSong = (await axios.get(`/song/url?id=${id}`)).data.data[0];
+    async search (isSearch = true) {
+      if (isSearch) {
+        this.offset = 0;
+        this.limit = 30;
+      }
 
-      this.lyric = (
-        await axios.get(`http://localhost:3000/lyric?id=${id}`)
-      ).data.lrc.lyric
+      const { songs, songCount } = await musciApi.search(
+        this.searchKey,
+        this.limit,
+        this.offset
+      );
+
+      this.songCount = songCount;
+      this.songList = [...this.songList, ...songs];
+    },
+    async play (id) {
+      this.currentSong = (await musciApi.songURL(id))[0];
+
+      this.lyric = (await musciApi.lyric(id)).lrc.lyric
         .split("\n")
-        .map((item) => {
-          if (!item) return { time: 9999, text: "end" };
+        .map(item => {
+          if (!item) return;
           const splitArray = item.split("]");
           const timeArr = splitArray[0].split("[")[1].split(":");
           const time = parseFloat(timeArr[0]) * 60 + parseFloat(timeArr[1]);
           const text = splitArray[1];
           return {
             time,
-            text,
+            text
           };
-        });
+        })
+        .filter(item => item);
+
+      console.log(this.lyric);
     },
-    lyricSync() {
+    lyricSync () {
       for (let i = 0; i < this.lyric.length; i++) {
         const item = this.lyric[i];
         if (item.time >= this.$refs.player.currentTime) {
@@ -93,9 +106,24 @@ export default {
         }
       }
     },
-  },
+
+    changeHandler (pagination) {
+      if (
+        pagination.current ===
+        Math.ceil(this.songList.length / pagination.pageSize) &&
+        this.songList.length < this.songCount
+      ) {
+        this.offset++;
+
+        if ((this.offset + 1) * this.limit > this.songCount) {
+          this.limit = this.songCount - this.offset * this.limit;
+        }
+
+        this.search(false);
+      }
+    }
+  }
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
